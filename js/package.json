@@ -36,7 +36,7 @@
     "jquery": "^3.2.1",
     "jquery-ui-dist": "^1.12.1",
     "moment": "^2.24.0",
-    "slickgrid-qgrid": "0.0.5",
+    "slickgrid": "2.4.44",
     "underscore": "^1.9.2"
   },
   "jshintConfig": {

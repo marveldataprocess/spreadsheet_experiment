@@ -18,8 +18,7 @@ from traitlets import (
     Tuple,
     Any,
     All,
-    parse_notifier_name,
-    Union,
+     Union,
 )
 from itertools import chain
 from uuid import uuid4
@@ -45,7 +44,7 @@ class _DefaultSettings(object):
             "editable": True,
             "autoEdit": False,
             "explicitInitialization": True,
-            "maxVisibleRows": 15,
+            "maxVisibleRows": 12,
             "minVisibleRows": 8,
             "sortable": True,
             "filterable": True,
@@ -598,6 +597,9 @@ class SpreadsheetWidget(widgets.DOMWidget):
 
     """
 
+    """
+    DomWidget attribute to define connections between backend and frontend
+    """
     _view_name = Unicode("ModinSpreadsheetView").tag(sync=True)
     _model_name = Unicode("ModinSpreadsheetModel").tag(sync=True)
     _view_module = Unicode("modin_spreadsheet").tag(sync=True)
@@ -605,6 +607,9 @@ class SpreadsheetWidget(widgets.DOMWidget):
     _view_module_version = Unicode("^0.1.1").tag(sync=True)
     _model_module_version = Unicode("^0.1.1").tag(sync=True)
 
+    """
+    private attributes used in dataframe operations 
+    """
     _df = Union([Instance(pd.DataFrame), Instance(pandas.DataFrame)])
     _df_json = Unicode("", sync=True)
     _primary_key = List()
@@ -1612,7 +1617,8 @@ class SpreadsheetWidget(widgets.DOMWidget):
             )
 
         elif content["type"] == "add_row":
-            row_index = self._duplicate_last_row()
+            print("add a row")
+            row_index = self._add_empty_row()
             self._notify_listeners(
                 {"name": "row_added", "index": row_index, "source": "gui"}
             )
@@ -1780,13 +1786,28 @@ class SpreadsheetWidget(widgets.DOMWidget):
             The method for removing a row (or rows).
         """
         if row is None:
-            added_index = self._duplicate_last_row()
+            added_index = self._add_empty_row()
         else:
-            added_index = self._add_row(row)
+            added_index = self._add_empty_row()
 
         self._notify_listeners(
             {"name": "row_added", "index": added_index, "source": "api"}
         )
+
+    def _add_empty_row(self):
+        print("add empty row")
+        print(self._selected_rows)
+        df = self._df
+        df1 = pd.DataFrame([[np.nan] * len(df.columns)], columns=df.columns)
+        print("step 2")
+        df2 = df1.append(df, ignore_index=True)
+        self._df = df2
+        print(df2.shape)
+
+        self._update_table(
+            triggered_by="add_row", scroll_to_row=1
+        )
+        return 1
 
     def _duplicate_last_row(self):
         """
@@ -1989,6 +2010,7 @@ class SpreadsheetWidget(widgets.DOMWidget):
                 "source": source,
             }
         )
+        print(self._selected_rows)
 
     def toggle_editable(self):
         """
