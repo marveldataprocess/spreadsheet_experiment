@@ -16,15 +16,15 @@ try {
 }
 var jquery_ui = require('jquery-ui-dist/jquery-ui.min.js');
 
-require('slickgrid-qgrid/slick.core.js');
-require('slickgrid-qgrid/lib/jquery.event.drag-2.3.0.js');
-require('slickgrid-qgrid/plugins/slick.rowselectionmodel.js');
-require('slickgrid-qgrid/plugins/slick.checkboxselectcolumn.js');
-require('slickgrid-qgrid/slick.dataview.js');
-require('slickgrid-qgrid/slick.grid.js');
-require('slickgrid-qgrid/slick.editors.js');
-require('style-loader!slickgrid-qgrid/slick.grid.css');
-require('style-loader!slickgrid-qgrid/slick-default-theme.css');
+require('slickgrid/slick.core.js');
+require('slickgrid/lib/jquery.event.drag-2.3.0.js');
+require('slickgrid/plugins/slick.rowselectionmodel.js');
+require('slickgrid/plugins/slick.checkboxselectcolumn.js');
+require('slickgrid/slick.dataview.js');
+require('slickgrid/slick.grid.js');
+require('slickgrid/slick.editors.js');
+require('style-loader!slickgrid/slick.grid.css');
+require('style-loader!slickgrid/slick-default-theme.css');
 require('style-loader!jquery-ui-dist/jquery-ui.min.css');
 require('style-loader!./spreadsheet.css');
 
@@ -99,11 +99,18 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
       `).appendTo(this.toolbar);
     };
 
-    append_btn({
+    /* append_btn({
       loading_text: 'Adding...',
       event_type: 'add_row',
       text: 'Add Row'
+    }); */
+
+    append_btn({
+      loading_text: 'Adding...',
+      event_type: 'add_row',
+      text: 'Add Empty Row'
     });
+
 
     append_btn({
       loading_text: 'Removing...',
