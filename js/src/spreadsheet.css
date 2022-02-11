@@ -30,11 +30,12 @@
 }
 
 .spreadsheet-grid {
+  background: white;
+  outline: 0;
+  border: 1px solid gray;
   position: relative;
-  border: 1px solid #d3d3d3;
   margin-top: 6px;
   margin-bottom: 2px;
-  box-sizing: border-box;
 }
 
 .spreadsheet-toolbar {
@@ -131,6 +132,7 @@
   right: 20px;
   position: absolute;
   top: 15px;
+  border: 1px solid gray;
 }
 
 .spreadsheet-modal .spreadsheet-grid {
@@ -140,6 +142,7 @@
   left: 0px;
   right: 0px;
   height: auto !important;
+  border: 1px solid gray;
 }
 
 .spreadsheet-toolbar .full-screen-btn,
@@ -149,6 +152,7 @@
   padding: 4px 7px;
   float: right;
   margin-right: 0px;
+  display: none;
 }
 
 .output_scroll .spreadsheet-grid {
@@ -210,11 +214,11 @@
 
 .spreadsheet-grid.force-fit-columns .slick-header-column:last-child .filter-button {
   margin-right: -4px;
-  border-right: 1px solid transparent;
+  border-right: 1px solid;
 }
 
 .spreadsheet-grid.hide-scrollbar .slick-header-column:last-child .slick-resizable-handle {
-  right: -4px;
+  right: 1px;
 }
 
 .spreadsheet-grid.hide-scrollbar > .slick_header .slick-header-column:last-child .filter-button,
@@ -233,10 +237,10 @@
 .spreadsheet-grid .slick-header-column {
   background: rgb(245, 245, 245);
   color: #565656;
-  border-right-style: none;
-  font-size: 13px;
+  border-right: 1px solid #ccc;
+  font-size: 11px;
   font-weight: bold;
-  padding: 6px 2px !important;
+  padding: 6px !important;
 }
 
 .spreadsheet-grid .slick-header-column.active {
@@ -295,8 +299,8 @@
 .spreadsheet-grid .slick-cell {
   border-bottom: 1px solid #e1e8ed;
   border-right: none;
-  border-left: 1px solid transparent;
-  font-size: 13px;
+  border-left: 1px solid #e1e8ed;
+  font-size: 9px;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   padding-left: 0px;
   padding-top: 4px;
@@ -352,7 +356,6 @@
 .spreadsheet-grid .idx-col.group-middle {
   border-top-color: transparent;
   border-bottom-color: transparent;
-  color: transparent;
   background-color: #FFF;
 }
 

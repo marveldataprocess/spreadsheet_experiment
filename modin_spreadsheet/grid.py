@@ -1618,6 +1618,12 @@ class SpreadsheetWidget(widgets.DOMWidget):
 
         elif content["type"] == "add_row":
             print("add a row")
+            row_index = self._duplicate_last_row()
+            self._notify_listeners(
+                {"name": "row_added", "index": row_index, "source": "gui"}
+            )
+        elif content["type"] == "add_empty_row":
+            print("add an empty row")
             row_index = self._add_empty_row()
             self._notify_listeners(
                 {"name": "row_added", "index": row_index, "source": "gui"}
