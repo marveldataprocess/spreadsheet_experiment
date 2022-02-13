@@ -8,25 +8,203 @@ var text_filter = require('./spreadsheet.textfilter.js');
 var boolean_filter = require('./spreadsheet.booleanfilter.js');
 var editors = require('./spreadsheet.editors.js');
 var dialog = null;
+
+
+
+require('slickgrid/slick.core.js');
+require('slickgrid/lib/jquery.event.drag-2.3.0.js');
+require('slickgrid/plugins/slick.rowselectionmodel.js');
+require('slickgrid/plugins/slick.checkboxselectcolumn.js');
+require('slickgrid/plugins/slick.contextmenu.js');
+require('slickgrid/slick.dataview.js');
+require('slickgrid/slick.grid.js');
+require('slickgrid/slick.editors.js');
+require('jquery-ui-dist/jquery-ui.min.js');
+
+
+
+require('style-loader!slickgrid/slick.grid.css');
+require('style-loader!slickgrid/slick-default-theme.css');
+require('style-loader!slickgrid/plugins/slick.contextmenu.css');
+require('style-loader!jquery-ui-dist/jquery-ui.min.css');
+require('style-loader!./spreadsheet.css');
+require('style-loader!./menu.css');
+
+
+
 try {
   dialog = require('base/js/dialog');
 } catch (e) {
   console.warn("Modin Spreadsheet was unable to load base/js/dialog. " +
                "Full screen button won't be available");
 }
-var jquery_ui = require('jquery-ui-dist/jquery-ui.min.js');
 
-require('slickgrid/slick.core.js');
-require('slickgrid/lib/jquery.event.drag-2.3.0.js');
-require('slickgrid/plugins/slick.rowselectionmodel.js');
-require('slickgrid/plugins/slick.checkboxselectcolumn.js');
-require('slickgrid/slick.dataview.js');
-require('slickgrid/slick.grid.js');
-require('slickgrid/slick.editors.js');
-require('style-loader!slickgrid/slick.grid.css');
-require('style-loader!slickgrid/slick-default-theme.css');
-require('style-loader!jquery-ui-dist/jquery-ui.min.css');
-require('style-loader!./spreadsheet.css');
+var MainMenu = function () {
+
+  var activated = false;
+
+  var settings = {
+    disabledClass: 'disabled',
+    submenuClass: 'submenu'
+  }
+
+  var mask = '<div id="menu-top-mask" style="height: 2px; background-color: #fff; z-index:1001;"/>';
+  var timeOut;
+  this.init = function (p) {
+
+    $.extend(settings, p);
+
+    $mask = $('#menu-top-mask');
+
+    $('ul.main-menu > li').click(function (event) {
+      var target = $(event.target);
+      if (target.hasClass(settings.disabledClass) || target.parents().hasClass(settings.disabledClass) || target.hasClass(settings.submenuClass)) {
+        return;
+      }
+
+      toggleMenuItem($(this));
+    });
+
+
+
+    $('ul.main-menu > li').mouseenter(function () {
+      if (activated && $(this).hasClass('active-menu') == false) {
+        toggleMenuItem($(this));
+      }
+    });
+
+    $('ul.main-menu > li > ul li').mouseenter(function (e) {
+      // Hide all other opened submenus in same level of this item
+      $el = $(e.target);
+      if ($el.hasClass('separator')) return;
+      clearTimeout(timeOut);
+      var parent = $el.closest('ul');
+      parent.find('ul.active-sub-menu').each(function () {
+        if ($(this) != $el)
+          $(this).removeClass('active-sub-menu').hide();
+      });
+
+      // Show submenu of selected item
+      if ($el.children().length > 0) {
+        timeOut = setTimeout(function () { toggleSubMenu($el) }, 500);
+      }
+    });
+
+    $('ul.main-menu > li > ul li').each(function () {
+      if ($(this).children('ul').length > 0) {
+        $(this).addClass(settings.submenuClass);
+      }
+    });
+
+    $('ul.main-menu li.' + settings.disabledClass).bind('click', function (e) {
+      e.preventDefault();
+    });
+
+    //#region - Toggle Main Menu Item -
+
+    toggleMenuItem = function (el) {
+
+      // Hide all open submenus
+      $('.active-sub-menu').removeClass('active-sub-menu').hide();
+
+      $('#menu-top-mask').remove();
+
+      var submenu = el.find("ul:first");
+      var top = parseInt(el.css('padding-bottom').replace("px", ""), 10) + parseInt(el.css('padding-top').replace("px", ""), 10) +
+          el.position().top +
+          el.height();
+
+      submenu.prepend($(mask));
+      var $mask = $('#menu-top-mask');
+      var maskWidth = el.width() +
+          parseInt(el.css('padding-left').replace("px", ""), -5) +
+          parseInt(el.css('padding-right').replace("px", ""), -5);
+
+      $mask.css({ position: 'absolute',
+        top: '-1px',
+        width: (maskWidth) + 'px'
+      });
+
+      submenu.css({
+        position: 'absolute',
+        top: top + 'px',
+        left: el.position().left + 'px',
+        zIndex: 100
+      });
+
+      submenu.stop().toggle();
+      activated = submenu.is(":hidden") == false;
+
+      !activated ? el.removeClass('active-menu') : el.addClass('active-menu');
+
+      if (activated) {
+        $('.active-menu').each(function () {
+          if ($(this).offset().left != el.offset().left) {
+            $(this).removeClass('active-menu');
+            $(this).find("ul:first").hide();
+          }
+        });
+      }
+    }
+
+    //#endregion
+
+    //#region - Toggle Sub Menu Item -
+
+    toggleSubMenu = function (el) {
+
+      if (el.hasClass(settings.disabledClass)) {
+        return;
+      }
+
+      var submenu = el.find("ul:first");
+      var paddingLeft = parseInt(el.css('padding-right').replace('px', ''), 10);
+      var borderTop = parseInt(el.css('border-top-width').replace("px", ""), 10);
+      borderTop = !isNaN(borderTop) ? borderTop : 1;
+      var top = el.position().top - borderTop;
+
+      submenu.css({
+        position: 'absolute',
+        top: top + 'px',
+        left: el.width() + paddingLeft + 'px',
+        zIndex: 1000
+      });
+
+      submenu.addClass('active-sub-menu');
+
+      submenu.show();
+
+      el.mouseleave(function () {
+      	submenu.hide();
+      });
+    }
+
+    //#endregion
+
+    closeMainMenu = function () {
+      activated = false;
+      $('.active-menu').find("ul:first").hide();
+      $('.active-menu').removeClass('active-menu');
+      $('.active-sub-menu').hide();
+    };
+
+    $(document).keyup(function (e) {
+      if (e.keyCode == 27) {
+        closeMainMenu();
+      }
+    });
+
+    $(document).bind('click', function (event) {
+      var target = $(event.target);
+      if (!target.hasClass('active-menu') && !target.parents().hasClass('active-menu')) {
+        closeMainMenu();
+      }
+    });
+  }
+}
+
+
+
 
 // Model for the modin-spreadsheet widget
 class ModinSpreadsheetModel extends widgets.DOMWidgetModel {
@@ -86,65 +264,64 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
 
     this.toolbar = $("<div class='spreadsheet-toolbar'>").appendTo(this.$el);
 
-    let append_btn = (btn_info) => {
-      return $(`
-        <button
-        class='btn btn-default'
-        data-loading-text='${btn_info.loading_text}'
-        data-btn-text='${btn_info.text}'
-        data-event-type='${btn_info.event_type ? btn_info.event_type : ''}'
-        data-handler-function='${btn_info.handler_function ? btn_info.handler_function : ''}'>
-            ${btn_info.text}
-        </button>
-      `).appendTo(this.toolbar);
-    };
-
-    /* append_btn({
-      loading_text: 'Adding...',
-      event_type: 'add_row',
-      text: 'Add Row'
-    }); */
-
-    append_btn({
-      loading_text: 'Adding...',
-      event_type: 'add_row',
-      text: 'Add Empty Row'
-    });
 
 
-    append_btn({
-      loading_text: 'Removing...',
-      event_type: 'remove_row',
-      text: 'Remove Row'
-    });
 
-    append_btn({
-      loading_text: 'Clearing...',
-      event_type: 'clear_history',
-      text: 'Clear History'
-    });
 
-    append_btn({
-      loading_text: 'Filtering...',
-      event_type: 'filter_history',
-      text: 'Filter History'
-    });
 
-    append_btn({
-      loading_text: 'Resetting...',
-      text: 'Reset Filters',
-      handler_function: 'reset_all_filters'
-    });
 
-    append_btn({
-      loading_text: 'Resetting...',
-      text: 'Reset Sort',
-      event_type: 'reset_sort'
-    });
 
-    this.buttons = this.toolbar.find('.btn');
+
+
+
+    this.window_dropdown_menu = $(`
+    <div id="menu-bar" > 
+    <h1 style="text-align:center;color:#89CFF0;font-size:18px"> MovelSheet </h1>
+  <ul class="main-menu">
+    <li id="menu-file"> File
+      <ul>
+        <li id="new_dataframe" value="new_value"> New DataFrame 
+        </li>
+        <li class="separator"></li>
+        <li class="icon save" value="save_dataframe"><a href="#">Save<span>Ctrl+S</span></a></li>
+        <li class="separator"></li>
+        <li class="disabled" value="open_dataframe"><a href="#">Open</a></li>
+        <li class="separator"></li>
+        <li class="icon print" value="save_code"><a href="#">Save Code<span>Ctrl+P</span></a></li>
+      </ul>
+    </li>
+    <li> Edit
+      <ul>
+        <li value="add_row">Duplicate Last Row</li>
+        <li value="add_empty_row">Create Empty Row</li>
+        <li class="separator"></li>
+        <li value="remove_row">Remove Row</li>
+        <li value="clear_history">Clear Edit History</li>
+      </ul>
+    </li>
+    <li> Sort/Filter
+      <ul>
+        <li value="filter_history"> Filter History</li>
+        <li value="reset_filters"> Reset Filters</li>
+        <li class="separator"></li>
+        <li value="reset_sort"> Reset Sort</li>
+      </ul>
+    </li>
+    <li> Help
+      <ul>
+        <li>Tips</li>
+      </ul>
+    </li>
+  </ul>
+  <!-- end mainmenu --> 
+</div>
+    
+    `);
+
+    this.window_dropdown_menu.appendTo(this.toolbar);
 
     this.full_screen_btn = null;
+
     if (dialog) {
       this.full_screen_modal = $('body').find('.spreadsheet-modal');
       if (this.full_screen_modal.length == 0) {
@@ -169,6 +346,7 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
       `).appendTo(this.toolbar);
 
     }
+
     this.bind_toolbar_events();
   }
 
@@ -183,29 +361,11 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
     this.send({'type': 'reset_filters_end'})
   }
 
+
+
+
   bind_toolbar_events() {
-    this.buttons.off('click');
-    this.buttons.click((e) => {
-      let clicked = $(e.target);
-      if (clicked.hasClass('disabled')){
-        return;
-      }
-      if (this.in_progress_btn){
-        alert(`
-          Adding/removing row is not available yet because the
-          previous operation is still in progress.
-        `);
-      }
-      this.in_progress_btn = clicked;
-      clicked.text(clicked.attr('data-loading-text'));
-      clicked.addClass('disabled');
-      if (clicked.attr('data-event-type')) {
-        this.send({'type': clicked.attr('data-event-type')});
-      }
-      if (clicked.attr('data-handler-function')) {
-        this[clicked.attr('data-handler-function')]();
-      }
-    });
+
     if (!this.full_screen_btn) {
       return;
     }
@@ -238,6 +398,52 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
       });
       spreadsheet_modal.modal('show');
     });
+
+
+    var activated = false
+
+
+    // this will find the element with class = main-menu
+    this.window_dropdown_menu.main_menu_bar = this.window_dropdown_menu.find('ul.main-menu');
+    this.window_dropdown_menu.main_menu_bar.mouseenter((e) =>{
+      if(activated === false)
+      {
+        new MainMenu().init();
+        activated = true
+      }
+    });
+
+
+    $('ul.main-menu > li > ul li').click(function (event) {
+
+      // Prevent click event to propagate to parent elements
+      event.stopPropagation();
+
+      // Prevent any operations if item is disabled
+      if ($(this).hasClass(settings.disabledClass)) {
+        return;
+      }
+
+      // If item is active, check if there are submenus (ul elements inside current li)
+      if ($(this).has( "ul" ).length > 0) {
+        // Automatically toggle submenu, if any
+        toggleSubMenu($(this));
+      }
+      else{
+        // If there are no submenus, close main menu.
+        closeMainMenu();
+      }
+    });
+
+
+
+    this.window_dropdown_menu.main_menu_bar.click((event) => {
+      let target = $(event.target);
+      if (!target.hasClass('active-menu') && !target.parents().hasClass('active-menu')) {
+        this.send({'type': event.target.getAttribute("value")})
+      }
+    });
+
   }
 
   /**
@@ -250,6 +456,7 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
     if (!this.grid_elem) {
       this.grid_elem = $("<div class='spreadsheet-grid'>").appendTo(this.$el);
     }
+
 
     // create the table
     var df_json = JSON.parse(this.model.get('_df_json'));
@@ -405,7 +612,7 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
       // don't allow editing index columns
       if (cur_column.is_index) {
         slick_column.editor = editors.IndexEditor;
-        
+
         if (cur_column.first_index){
           slick_column.cssClass += ' first-idx-col';
         }
@@ -468,7 +675,7 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
     this.slick_grid.setSelectionModel(new Slick.RowSelectionModel());
     this.slick_grid.setCellCssStyles("grouping", this.row_styles);
     this.slick_grid.render();
-    
+
     this.update_size();
 
     var render_header_cell = (e, args) => {
@@ -547,6 +754,80 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
     if (this.grid_options.sortable != false) {
       this.grid_header.click(handle_header_click)
     }
+
+    var contextMenuOptions = {
+      // optionally and conditionally define when the the menu is usable,
+      // this should be used with a custom formatter to show/hide/disable the menu
+      commandTitle: "Commands",
+      // which column to show the command list? when not defined it will be shown over all columns
+      commandItems: [
+        { command: "remove_row", title: "Delete A Row",
+          action: (e, args) => {
+            this.send({'type': "remove_row"})
+          }
+        },
+        { command: "add_empty_row", title: "Add A Row", iconImage: "../images/delete.png", cssClass: "bold", textCssClass: "red",
+          action: (e, args) => {
+            this.send({'type': "add_empty_row"})
+          }
+        },
+        { divider: true },
+        {
+          command: "help", title: "Help", iconCssClass: "icon-help"
+        }
+      ],
+
+      // Options allows you to edit a column from an option chose a list
+      // for example, changing the Priority value
+      // you can also optionally define an array of column ids that you wish to display this option list (when not defined it will show over all columns)
+      optionTitle: "Change Priority",
+      optionShownOverColumnIds: ["priority"], // optional, when defined it will only show over the columns (column id) defined in the array
+      optionItems: [
+        {
+          option: 0, title: "none", textCssClass: "italic",
+          // only enable this option when there's no Effort Driven
+          itemUsabilityOverride: function (args) {
+                     },
+          // you can use the "action" callback and/or subscribe to the "onCallback" event, they both have the same arguments
+          action: function (e, args) {
+            // action callback.. do something
+          },
+        },
+        { option: 1, iconImage: "../images/info.gif", title: "Low" },
+        { option: 2, iconImage: "../images/info.gif", title: "Medium" },
+        { option: 3, iconImage: "../images/bullet_star.png", title: "High" },
+        // you can pass divider as a string or an object with a boolean
+        // "divider",
+        { divider: true },
+        {
+          option: 4, title: "Extreme", disabled: true,
+          // only shown when there's no Effort Driven
+          itemVisibilityOverride: function (args) {
+          }
+        },
+      ]
+    };
+
+    let contextMenuPlugin = new Slick.Plugins.ContextMenu(contextMenuOptions);
+    this.slick_grid.registerPlugin(contextMenuPlugin);
+    contextMenuPlugin.onBeforeMenuShow.subscribe((e, args) =>{
+      // for example, you could select the row it was clicked with
+      this.slick_grid.setSelectedRows([args.row], e.target); // select the entire row
+      //this.slick_grid.setActiveCell(args.row, args.cell, false); // select the cell that the click originated
+      console.log("Before the global Context Menu is shown", args);
+    });
+    contextMenuPlugin.onBeforeMenuClose.subscribe(function (e, args) {
+      console.log("Global Context Menu is closing", args);
+    });
+
+    contextMenuPlugin.onAfterMenuShow.subscribe(function (e, args) {
+      // for example, you could select the row it was clicked with
+      // grid.setSelectedRows([args.row]); // select the entire row
+      //this.slick_grid.setActiveCell(args.row, args.cell, false); // select the cell that the click originated
+      console.log("After the Context Menu is shown", args);
+    });
+
+
 
     this.slick_grid.onViewportChanged.subscribe((e) => {
       if (this.viewport_timeout){
@@ -659,7 +940,7 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
    * Main entry point for drawing the widget,
    * including toolbar buttons if necessary.
    */
-  create_data_view(df) {
+   create_data_view(df) {
     let df_range = this.df_range = this.model.get("_df_range");
     let df_length = this.df_length = this.model.get("_row_count");
     return {
@@ -741,11 +1022,6 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
         this.reset_in_progress_button();
       }
     } else if (msg.type == 'update_data_view') {
-      if (this.buttons) {
-        if (this.buttons.hasClass('disabled')) {
-          this.buttons.removeClass('disabled');
-        }
-      }
       if (this.update_timeout) {
         clearTimeout(this.update_timeout);
       }
@@ -912,6 +1188,8 @@ class ModinSpreadsheetView extends widgets.DOMWidgetView {
     this.slick_grid.resizeCanvas();
   }
 }
+
+
 
 module.exports = {
   ModinSpreadsheetModel : ModinSpreadsheetModel,
